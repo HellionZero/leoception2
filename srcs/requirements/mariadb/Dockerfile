@@ -9,8 +9,6 @@ COPY conf/my.cnf /etc/mysql/my.cnf
 RUN chmod 644 /etc/mysql/my.cnf \
 	&& chown mysql:mysql /etc/mysql/my.cnf
 
-COPY tools/database.sql /etc/mysql/database.sql
-
 COPY tools/init_db.sh /init_db.sh
 RUN chmod +x /init_db.sh
 

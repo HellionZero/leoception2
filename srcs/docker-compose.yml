@@ -2,11 +2,7 @@ networks:
   inception:
     driver: bridge
 
-volumes:
-  mariadb_data:
-
 services:
-
   mariadb:
     build: ./requirements/mariadb
     container_name: mariadb
@@ -18,11 +14,15 @@ services:
     volumes:
       - mariadb_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "mariadb-admin --protocol=socket --socket=/run/mysqld/mysqld.sock -uroot -p$MDB_ROOT_PASSWORD ping >/dev/null 2>&1"]
-      interval: 1m30s
-      timeout: 30s
+      test:
+        [
+        "CMD-SHELL",
+        "mariadb --protocol=socket --socket=/run/mysqld/mysqld.sock -u root -p\"$(cat /run/secrets/db_root_password)\" -e \"SELECT 1\" >/dev/null 2>&1"
+        ]
+      interval: 10s
+      timeout: 5s
       retries: 5
-      start_period: 30s
+      start_period: 20s
     networks:
       - inception
     secrets:
@@ -40,3 +40,6 @@ secrets:
     file: ../secrets/wp_db_user
   wp_db_password:
     file: ../secrets/wp_db_password
+
+volumes:
+  mariadb_data:
