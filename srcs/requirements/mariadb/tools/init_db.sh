@@ -1,38 +1,28 @@
-#!/bin/bash
-
 #!/bin/sh
-set -eu
 
-: "${MDB_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}"
-: "${MDB_DATABASE:?MDB_DATABASE is required}"
-: "${MDB_USER:?MDB_USER is required}"
-: "${MDB_PASSWORD:?MDB_PASSWORD is required}"
+MDB_ROOT_PASSWORD=$(cat /run/secrets/db_root_password)
+MDB_PASSWORD=$(cat /run/secrets/wp_db_password) 
+MDB_USER=$(cat /run/secrets/wp_db_user) 
+MDB_DATABASE=$(cat /run/secrets/wp_db_name)
 
-if [ ! -d /var/lib/mysql/mysql ]; then
-    mariadb-install-db --user=mysql --datadir=/var/lib/mysql >/dev/null
-else
-    echo "MariaDB data directory already exists, skipping initialization"
-fi
+mariadbd-safe --skip-networking & pid="$!"
 
-chown -R mysql:mysql /run/mysqld /var/lib/mysql 
+echo "preparing mariadb..."
 
-mariadbd --user=mysql --datadir=/var/lib/mysql --socket=/run/mysqld/mysqld.sock --bind-address=127.0.0.1 --skip-networking --pid-file=/run/mysqld/mysqld.pid &
-
-until mariadb-admin --protocol=socket --socket=/run/mysqld/mysqld.sock ping >/dev/null 2>&1; do
+until mariadb-admin ping --silent; do
     sleep 1
 done
 
-envsubst < /tools/database.sql > /tmp/database.sql
+mariadb -u root <<EOF
+ALTER USER 'root'@'localhost' IDENTIFIED BY '${MDB_ROOT_PASSWORD}';
+FLUSH PRIVILEGES;
+EOF
 
-if mariadb --protocol=socket --socket=/run/mysqld/mysqld.sock -uroot -p"$MDB_ROOT_PASSWORD" -e "SELECT 1" >/dev/null 2>&1; then
-    mariadb --protocol=socket --socket=/run/mysqld/mysqld.sock -uroot -p"$MDB_ROOT_PASSWORD" < /tmp/database.sql
-else
-    mariadb --protocol=socket --socket=/run/mysqld/mysqld.sock -uroot < /tmp/database.sql
-fi
+mariadb -u root -p "${MDB_ROOT_PASSWORD}" /etc/mysql/database.sql
 
-mariadb-admin --protocol=socket --socket=/run/mysqld/mysqld.sock -uroot -p"$MDB_ROOT_PASSWORD" shutdown
+mariadb -u root -p "${MDB_ROOT_PASSWORD}" shutdown
 
-echo "MariaDB data directory initialized"
+wait "$pid"
 
-exec mariadbd --user=mysql --datadir=/var/lib/mysql --socket=/run/mysqld/mysqld.sock --bind-address=0.0.0.
+exec mariadbd-safe
 

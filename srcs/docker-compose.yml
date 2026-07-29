@@ -11,14 +11,32 @@ services:
     build: ./requirements/mariadb
     container_name: mariadb
     restart: unless-stopped
+    env_file:
+      - temp.env
     ports:
-      - "3306:3306"
-    environment:
-      MDB_ROOT_PASSWORD: ${MDB_ROOT_PASSWORD}
-      MDB_DATABASE: ${MDB_DATABASE}
-      MDB_USER: ${MDB_USER}
-      MDB_PASSWORD: ${MDB_PASSWORD}
+      - 3306:3306
     volumes:
       - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mariadb-admin --protocol=socket --socket=/run/mysqld/mysqld.sock -uroot -p$MDB_ROOT_PASSWORD ping >/dev/null 2>&1"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
     networks:
       - inception
+    secrets:
+      - db_root_password
+      - wp_db_name
+      - wp_db_password
+      - wp_db_user
+
+secrets:
+  db_root_password:
+    file: ../secrets/db_root_password
+  wp_db_name:
+    file: ../secrets/wp_db_name
+  wp_db_user:
+    file: ../secrets/wp_db_user
+  wp_db_password:
+    file: ../secrets/wp_db_password
