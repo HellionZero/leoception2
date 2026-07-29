@@ -6,6 +6,7 @@ MYSQL_ROOT_PASSWORD=$(cat /run/secrets/db_root_password)
 MDB_PASSWORD=$(cat /run/secrets/wp_db_password)
 MDB_USER=$(cat /run/secrets/wp_db_user)
 MDB_DATABASE=$(cat /run/secrets/wp_db_name)
+SOCKET=/run/mysqld/mysqld.sock
 
 mkdir -p /run/mysqld
 chown -R mysql:mysql /run/mysqld /var/lib/mysql
