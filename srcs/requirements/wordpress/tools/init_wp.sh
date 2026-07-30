@@ -11,7 +11,7 @@ WP_USER_PASSWORD=$(cat /run/secrets/wp_user_password)
 WP_USER_EMAIL=$(cat /run/secrets/wp_user_email)
 WP_DB_NAME=$(cat /run/secrets/wp_db_name)
 
-until mariadb-admin -h mariadb -u"${WP_DB_USER}" -p"${WP_DB_PASSWORD}" ping --silent; do
+until mariadb --protocol=TCP -h mariadb -u"${WP_DB_USER}" -p"${WP_DB_PASSWORD}" -e "SELECT 1"; do
     echo "Waiting for database connection..."
     sleep 3
 done
@@ -29,7 +29,7 @@ if  ! wp core is-installed --allow-root --path="/var/www/html"; then
         --dbname="${WP_DB_NAME}" \
         --dbuser="${WP_DB_USER}" \
         --dbpass="${WP_DB_PASSWORD}" \
-        --dbhost="mariadb" \
+        --dbhost="mariadb:3306" \
         --skip-check \
         --path="/var/www/html" 
         

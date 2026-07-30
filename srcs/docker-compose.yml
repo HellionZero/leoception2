@@ -46,6 +46,18 @@ services:
       - inception
     ports:
       - 5050:5050
+    volumes:
+      - wp_data:/var/www/html
+    healthcheck:
+      test:
+        [
+        "CMD-SHELL",
+        "curl -f http://localhost:5050/wp-admin/install.php || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     secrets:
       - wp_db_name
       - wp_db_user
@@ -82,3 +94,4 @@ secrets:
 
 volumes:
   mariadb_data:
+  wp_data:
