@@ -17,7 +17,7 @@ services:
       test:
         [
         "CMD-SHELL",
-        "mariadb --protocol=socket --socket=/run/mysqld/mysqld.sock -u root -p\"$(cat /run/secrets/db_root_password)\" -e \"SELECT 1\" >/dev/null 2>&1"
+        "mariadb-admin ping -h localhost -u $(cat /run/secrets/db_health_user) -p$(cat /run/secrets/db_health_password) || exit 1",
         ]
       interval: 10s
       timeout: 5s
@@ -33,6 +33,29 @@ services:
       - wp_db_password
       - wp_db_user
 
+  wordpress:
+    build: ./requirements/wordpress
+    container_name: wordpress
+    restart: unless-stopped
+    env_file:
+      - temp.env
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    networks:
+      - inception
+    ports:
+      - 5050:5050
+    secrets:
+      - wp_db_name
+      - wp_db_user
+      - wp_db_password
+      - wp_user
+      - wp_user_password
+      - wp_user_email
+      - wp_admin_password
+      - wp_admin_email
+
 secrets:
   db_root_password:
     file: ../secrets/db_root_password
@@ -46,6 +69,16 @@ secrets:
     file: ../secrets/wp_db_user
   wp_db_password:
     file: ../secrets/wp_db_password
+  wp_user:
+    file: ../secrets/wp_user
+  wp_user_password:
+    file: ../secrets/wp_user_password
+  wp_user_email:
+    file: ../secrets/wp_user_email
+  wp_admin_password:
+    file: ../secrets/wp_admin_password
+  wp_admin_email:
+    file: ../secrets/wp_admin_email
 
 volumes:
   mariadb_data:
