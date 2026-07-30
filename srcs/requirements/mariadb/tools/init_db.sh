@@ -3,9 +3,13 @@
 set -eu
 
 MYSQL_ROOT_PASSWORD=$(cat /run/secrets/db_root_password)
+MDB_HEALTH_USER=$(cat /run/secrets/db_health_user)
+MDB_HEALTH_PASSWORD=$(cat /run/secrets/db_health_password)
 MDB_PASSWORD=$(cat /run/secrets/wp_db_password)
 MDB_USER=$(cat /run/secrets/wp_db_user)
 MDB_DATABASE=$(cat /run/secrets/wp_db_name)
+
+
 SOCKET=/run/mysqld/mysqld.sock
 
 mkdir -p /run/mysqld
@@ -35,7 +39,9 @@ EOF
 mariadb -u root -p"${MYSQL_ROOT_PASSWORD}" --socket=/run/mysqld/mysqld.sock << EOF
 CREATE DATABASE IF NOT EXISTS \`${MDB_DATABASE}\`;
 CREATE USER IF NOT EXISTS '${MDB_USER}'@'%' IDENTIFIED BY '${MDB_PASSWORD}';
+CREATE USER IF NOT EXISTS '${MDB_HEALTH_USER}'@'%' IDENTIFIED BY '${MDB_PASSWORD}';
 GRANT ALL PRIVILEGES ON \`${MDB_DATABASE}\`.* TO '${MDB_USER}'@'%';
+GRANT ALL PRIVILEGES ON \`${MDB_DATABASE}\`.* TO '${MDB_HEALTH_USER}'@'%';
 FLUSH PRIVILEGES;
 EOF
 

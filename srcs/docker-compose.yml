@@ -27,6 +27,8 @@ services:
       - inception
     secrets:
       - db_root_password
+      - db_health_user
+      - db_health_password
       - wp_db_name
       - wp_db_password
       - wp_db_user
@@ -34,6 +36,10 @@ services:
 secrets:
   db_root_password:
     file: ../secrets/db_root_password
+  db_health_user:
+    file: ../secrets/db_health_user
+  db_health_password:
+    file: ../secrets/db_health_password
   wp_db_name:
     file: ../secrets/wp_db_name
   wp_db_user:
