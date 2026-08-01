@@ -11,7 +11,7 @@ WP_USER_PASSWORD=$(cat /run/secrets/wp_user_password)
 WP_USER_EMAIL=$(cat /run/secrets/wp_user_email)
 WP_DB_NAME=$(cat /run/secrets/wp_db_name)
 
-until mariadb --protocol=TCP -h mariadb -u"${WP_DB_USER}" -p"${WP_DB_PASSWORD}" -e "SELECT 1"; do
+until mariadb --protocol=TCP -h mariadb -P 3306 -u"${WP_DB_USER}" -p"${WP_DB_PASSWORD}" -e "SELECT 1"; do
     echo "Waiting for database connection..."
     sleep 3
 done

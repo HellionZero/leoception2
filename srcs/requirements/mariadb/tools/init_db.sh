@@ -17,26 +17,24 @@ chown -R mysql:mysql /run/mysqld /var/lib/mysql
 
 if [ ! -d /var/lib/mysql/mysql ]; then
     mariadb-install-db --user=mysql --datadir=/var/lib/mysql
-fi
+    mariadbd-safe \
+        --user=mysql \
+        --datadir=/var/lib/mysql \
+        --socket=/run/mysqld/mysqld.sock \
+        --pid-file=/run/mysqld/mysqld.pid \
+        --skip-networking &
+    pid="$!"
 
-mariadbd-safe \
-    --user=mysql \
-    --datadir=/var/lib/mysql \
-    --socket=/run/mysqld/mysqld.sock \
-    --pid-file=/run/mysqld/mysqld.pid \
-    --skip-networking &
-pid="$!"
+    until mariadb-admin --socket=/run/mysqld/mysqld.sock ping --silent; do
+        sleep 1
+    done
 
-until mariadb-admin --socket=/run/mysqld/mysqld.sock ping --silent; do
-    sleep 1
-done
-
-mariadb --protocol=socket --socket=/run/mysqld/mysqld.sock -u root << EOF
+    mariadb --protocol=socket --socket=/run/mysqld/mysqld.sock -u root << EOF
 ALTER USER 'root'@'localhost' IDENTIFIED BY '${MYSQL_ROOT_PASSWORD}';
 FLUSH PRIVILEGES;
 EOF
 
-mariadb -u root -p"${MYSQL_ROOT_PASSWORD}" --socket=/run/mysqld/mysqld.sock << EOF
+    mariadb -u root -p"${MYSQL_ROOT_PASSWORD}" --socket=/run/mysqld/mysqld.sock << EOF
 CREATE DATABASE IF NOT EXISTS \`${MDB_DATABASE}\`;
 CREATE USER IF NOT EXISTS '${MDB_USER}'@'%' IDENTIFIED BY '${MDB_PASSWORD}';
 CREATE USER IF NOT EXISTS '${MDB_HEALTH_USER}'@'%' IDENTIFIED BY '${MDB_HEALTH_PASSWORD}';
@@ -45,8 +43,14 @@ GRANT ALL PRIVILEGES ON \`${MDB_DATABASE}\`.* TO '${MDB_HEALTH_USER}'@'%';
 FLUSH PRIVILEGES;
 EOF
 
-mariadb-admin -u root -p"${MYSQL_ROOT_PASSWORD}" --socket=/run/mysqld/mysqld.sock shutdown
-wait "$pid"
+    mariadb-admin -u root -p"${MYSQL_ROOT_PASSWORD}" --socket=/run/mysqld/mysqld.sock shutdown
+    wait "$pid"
+fi
 
-exec mariadbd-safe --user=mysql --datadir=/var/lib/mysql --socket=/run/mysqld/mysqld.sock
+exec mariadbd \
+    --user=mysql \
+    --datadir=/var/lib/mysql \
+    --socket=/run/mysqld/mysqld.sock \
+    --bind-address=0.0.0.0 \
+    --port=3306
 
