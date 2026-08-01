@@ -11,6 +11,10 @@ WP_USER_PASSWORD=$(cat /run/secrets/wp_user_password)
 WP_USER_EMAIL=$(cat /run/secrets/wp_user_email)
 WP_DB_NAME=$(cat /run/secrets/wp_db_name)
 
+wp() {
+    php -d memory_limit=512M /usr/local/bin/wp "$@"
+}
+
 until mariadb --protocol=TCP -h mariadb -P 3306 -u"${WP_DB_USER}" -p"${WP_DB_PASSWORD}" -e "SELECT 1"; do
     echo "Waiting for database connection..."
     sleep 3
@@ -18,7 +22,7 @@ done
 
 echo "Preparing the database for WordPress..."
 
-if  [ ! wp core is-installed --allow-root --path="/var/www/html" ]; then
+if ! wp core is-installed --allow-root --path="/var/www/html"; then
     wp core download \
         --allow-root \
         --path="/var/www/html"
@@ -35,7 +39,7 @@ if  [ ! wp core is-installed --allow-root --path="/var/www/html" ]; then
         
     wp core install \
         --allow-root \
-        --url="http://localhost:9000" \
+        --url="http://localhost:5050" \
         --title="Inception" \
         --admin_user="admin" \
         --admin_password="${WP_ADMIN_PASSWORD}" \
@@ -59,9 +63,9 @@ fi
 
 wp config set WP_CACHE true --add --type=constant --allow-root --path="/var/www/html"
 
-chown -R www-data:www-data /var/www/html
+chown -R nobody:nobody /var/www/html
 find /var/www/html -type d -exec chmod 755 {} \;
 find /var/www/html -type f -exec chmod 644 {} \;
 
-exec php-fpm8.1 -F
+exec php -S 0.0.0.0:5050 -t /var/www/html
 

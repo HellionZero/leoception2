@@ -52,7 +52,7 @@ services:
       test:
         [
         "CMD-SHELL",
-        "curl -f http://localhost:5050/wp-admin/install.php || exit 1",
+        "wget -q -O - http://localhost:5050/ >/dev/null || exit 1",
         ]
       interval: 10s
       timeout: 5s
