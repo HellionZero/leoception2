@@ -140,11 +140,13 @@ with all of this, the next step is to use a simple script to check if Docker and
 	docker compose version
 ```
 then, make the script executable by running the following command:
-```
+
+```bash
 	chmod +x docker_test.sh
 ```
 finally, run the script by executing the following command:
-```
+
+```bash
 	./docker_test.sh
 ```
 if everything is working correctly, you should see a message from Docker indicating that the installation was successful. This means that Docker and Docker Compose are installed and working correctly on your system, and you are ready to start using them for your Inception project.
@@ -162,7 +164,7 @@ This is the trickiest part, as it requires you to create a specific directory st
 	|	  |			├──	mariadb/
 	|	  |			└──	other_services/
 	|	  ├── docker-compose.yml
-	|	  └──	.env
+	|	  └──.env
 	└──	Makefile
 ```
 
