@@ -21,5 +21,8 @@ logs:
 config:
 	${COMPOSE} config
 
+restart:
+	${COMPOSE} restart
+
 .PHONY:
-	up down build fclean status logs config
+	up down build fclean status logs config restart
