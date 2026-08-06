@@ -8,7 +8,7 @@ services:
     container_name: mariadb
     restart: unless-stopped
     env_file:
-      - temp.env
+      - .env
     ports:
       - 3306:3306
     volumes:
@@ -38,21 +38,21 @@ services:
     container_name: wordpress
     restart: unless-stopped
     env_file:
-      - temp.env
+      - .env
     depends_on:
       mariadb:
         condition: service_healthy
     networks:
       - inception
     ports:
-      - 5050:5050
+      - 9000:9000
     volumes:
       - wp_data:/var/www/html
     healthcheck:
       test:
         [
         "CMD-SHELL",
-        "wget -q -O - http://localhost:5050/ >/dev/null || exit 1",
+        "wget -q -O - http://localhost:9000/ >/dev/null || exit 1",
         ]
       interval: 10s
       timeout: 5s
@@ -67,6 +67,21 @@ services:
       - wp_user_email
       - wp_admin_password
       - wp_admin_email
+
+  nginx:
+    build: ./requirements/nginx
+    container_name: nginx
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      wordpress:
+        condition: service_healthy
+    networks:
+      - inception
+    ports:
+      - 80:80
+      - 443:443
 
 secrets:
   db_root_password:

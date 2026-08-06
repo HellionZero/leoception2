@@ -54,7 +54,7 @@ if ! wp core is-installed --allow-root --path="/var/www/html"; then
         
     wp core install \
         --allow-root \
-        --url="http://localhost:5050" \
+        --url="http://localhost:9000" \
         --title="Inception" \
         --admin_user="admin" \
         --admin_password="${WP_ADMIN_PASSWORD}" \

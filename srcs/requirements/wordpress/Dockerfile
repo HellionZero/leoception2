@@ -25,6 +25,6 @@ RUN chmod +x /usr/local/bin/init_wp.sh
 
 WORKDIR /var/www/html
 
-EXPOSE 5050
+EXPOSE 9000
 
 ENTRYPOINT ["/usr/local/bin/init_wp.sh"]
