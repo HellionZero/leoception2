@@ -12,6 +12,10 @@ WP_USER=$(cat /run/secrets/wp_user)
 WP_USER_PASSWORD=$(cat /run/secrets/wp_user_password)
 WP_USER_EMAIL=$(cat /run/secrets/wp_user_email)
 WP_DB_NAME=$(cat /run/secrets/wp_db_name)
+DOMAIN_NAME="${DOMAIN_NAME:-localhost}"
+SITE_URL="${DOMAIN_NAME#http://}"
+SITE_URL="${SITE_URL#https://}"
+SITE_URL="https://${SITE_URL%/}"
 
 ### security measure to prevent the WordPress installation from crashing due to insufficient memory allocation for PHP. 
 ### This is a simple but effective way to ensure that the application has enough memory to function properly.
@@ -54,7 +58,7 @@ if ! wp core is-installed --allow-root --path="/var/www/html"; then
         
     wp core install \
         --allow-root \
-        --url="http://localhost:9000" \
+        --url="$SITE_URL" \
         --title="Inception" \
         --admin_user="admin" \
         --admin_password="${WP_ADMIN_PASSWORD}" \
@@ -77,19 +81,21 @@ if ! wp user get "${WP_USER}" --allow-root --path="/var/www/html" >/dev/null 2>&
 fi
 
 ### we need to set up the WordPress cache to improve the performance of the application.
+### This will help to reduce the load on the server and improve the user experience.
 
-wp config set WP_CACHE true --add --type=constant --allow-root --path="/var/www/html"
 
-### security measure to ensure the WordPress installation is secure. 
-### This is a critical step to protect the application from potential security threats.
-### We will set the file permissions to ensure that the application files are owned by the nobody 
-### user and group, and that the directories have the correct permissions to prevent unauthorized access.
+### set the correct ownership and permissions for the WordPress files.
+### This ensures that the web server can read and write to the files, 
+### and that the directories have the correct permissions to prevent unauthorized access.
 
 chown -R nobody:nobody /var/www/html
 find /var/www/html -type d -exec chmod 755 {} \;
 find /var/www/html -type f -exec chmod 644 {} \;
 
-### execute the built-in PHP server to serve the WordPress application on port 5050.
-
-exec php -S 0.0.0.0:5050 -t /var/www/html
+### start php-fpm so nginx can serve WordPress through FastCGI.
+mkdir -p /run/php
+if grep -q '^listen = 127.0.0.1:9000' /etc/php84/php-fpm.d/www.conf; then
+    sed -i "s/^listen = 127.0.0.1:9000/listen = 0.0.0.0:9000/" /etc/php84/php-fpm.d/www.conf
+fi
+exec php-fpm84 --nodaemonize -c /etc/php84/php-fpm.conf
 

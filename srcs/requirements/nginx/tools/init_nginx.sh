@@ -1,3 +1,5 @@
+#!/bin/sh
+
 set -e
 
 SSL_DIR="/etc/nginx/ssl"
@@ -14,7 +16,8 @@ else
     openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
         -keyout "$SSL_DIR/nginx.key" \
         -out "$SSL_DIR/nginx.crt" \
-        -subj "/C=BR/ST=SP/O=42SP/CN=${DOMAIN_NAME}"
+        -subj "/C=BR/ST=SP/O=42SP/CN=${DOMAIN_NAME}" \
+        -addext "subjectAltName=DNS:${DOMAIN_NAME},DNS:localhost,IP:127.0.0.1"
 fi
 
 echo "SSL certificate and key are ready."
